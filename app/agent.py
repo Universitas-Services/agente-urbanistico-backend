@@ -8,8 +8,12 @@ from google.adk.models import Gemini
 from google.genai import types
 
 # Captura dinámica del proyecto de CÓMPUTO (donde corre Agent Runtime)
-_, project_id = google.auth.default()
-os.environ["GOOGLE_CLOUD_PROJECT"] = project_id
+try:
+    _, project_id = google.auth.default()
+    if project_id:
+        os.environ["GOOGLE_CLOUD_PROJECT"] = project_id
+except Exception:
+    pass # Ignoramos errores de auth durante el Cloud Build
 os.environ["GOOGLE_CLOUD_LOCATION"] = "global"
 os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "True"
 
