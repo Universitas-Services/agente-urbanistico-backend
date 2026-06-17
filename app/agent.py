@@ -7,29 +7,24 @@ from google.adk.apps import App
 from google.adk.models import Gemini
 from google.genai import types
 
+# Captura dinámica del proyecto de CÓMPUTO (donde corre Agent Runtime)
 _, project_id = google.auth.default()
 os.environ["GOOGLE_CLOUD_PROJECT"] = project_id
 os.environ["GOOGLE_CLOUD_LOCATION"] = "global"
 os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "True"
 
 def consulta_normativa_urbanistica(query: str) -> str:
-    """Busca información legal, ordenanzas y normativas urbanísticas en la biblioteca matriz.
+    """Busca información legal, ordenanzas y normativas urbanísticas en la biblioteca matriz."""
     
-    Args:
-        query: La consulta de búsqueda sobre la normativa urbanística.
-        
-    Returns:
-        Un texto con los fragmentos más relevantes encontrados en la base de datos legal.
-    """
-    # Configuración cruzada: Apuntamos estrictamente al proyecto de los Data Stores
-    target_project_id = "ID_PROYECTO_UNIVERSITAS_LEGAL" # <-- Reemplazar por el ID real
+    # Configuración cruzada: Apuntamos estrictamente al proyecto del DATA STORE
+    target_project_id = "ID_PROYECTO_DATA_STORE" # <-- Reemplazar por el ID del proyecto que tiene los documentos
     location = "global"
-    data_store_id = "ID_DATA_STORE_URBANISTICO" # <-- Reemplazar por el ID real
+    data_store_id = "ID_DATA_STORE_URBANISTICO" # <-- Reemplazar por el ID de tu Data Store
     
     try:
         client = discoveryengine.SearchServiceClient()
         serving_config = client.serving_config_path(
-            project=target_project_id,
+            project=target_project_id, # Usamos el target_project_id, NO el project_id local
             location=location,
             data_store=data_store_id,
             serving_config="default_config",
@@ -54,20 +49,20 @@ def consulta_normativa_urbanistica(query: str) -> str:
     except Exception as e:
         return f"Ocurrió un error al consultar la biblioteca: {str(e)}"
 
-# Instrucciones con Gestión de Preguntas Meta
-INSTRUCCION_SISTEMA = """Eres un Asistente Legal experto en derecho urbanístico.
-Tu objetivo es resolver dudas normativas, de zonificación y ordenanzas de forma clara y precisa, utilizando exclusivamente la información proporcionada por tus herramientas de búsqueda en la biblioteca legal.
+# Instrucciones blindadas (Se mantienen igual)
+INSTRUCCION_SISTEMA = """Eres un Asistente Legal experto en derecho urbanístico de Universitas.
+Tu objetivo es resolver dudas normativas, de zonificación y ordenanzas de forma clara y precisa, utilizando exclusivamente la información de la biblioteca legal proporcionada.
 
 Reglas de interacción:
-1. Mantén un tono profesional, accesible y resolutivo.
-2. Si la información no está en los documentos proporcionados, indica que no tienes acceso a esa normativa específica; bajo ningún concepto inventes respuestas.
-3. Tienes estrictamente prohibido mencionar a los usuarios nombres de herramientas internas como "API", "tool-marco-normativo" o "consulta_normativa_urbanistica". Tus respuestas deben ser orgánicas y naturales.
+1. Mantén un tono profesional, accesible y corporativo.
+2. Si la información no está en los documentos proporcionados, indica que no tienes acceso a esa normativa específica; no inventes respuestas.
+3. Bajo ninguna circunstancia menciones nombres de herramientas técnicas internas (como "API", "Discovery Engine", "Data Store" o "consulta_normativa_urbanistica"). Tus respuestas deben ser completamente naturales.
 """
 
 root_agent = Agent(
     name="agente_urbanistico",
     model=Gemini(
-        model="gemini-1.5-pro", # Cambiado a Pro para mejor razonamiento legal y análisis de RAG
+        model="gemini-1.5-pro",
         retry_options=types.HttpRetryOptions(attempts=3),
     ),
     instruction=INSTRUCCION_SISTEMA,
@@ -76,5 +71,5 @@ root_agent = Agent(
 
 app = App(
     root_agent=root_agent,
-    name="agente-urbanistico",
+    name="app",
 )
