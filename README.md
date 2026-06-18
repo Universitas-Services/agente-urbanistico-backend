@@ -9,7 +9,7 @@ Agent generated with `agents-cli` version `0.4.0`
 agente-urbanistico/
 ├── app/         # Core agent code
 │   ├── agent.py               # Main agent logic
-│   ├── agent_runtime_app.py    # Agent Runtime application logic
+│   ├── fast_api_app.py        # FastAPI Backend server
 │   └── app_utils/             # App utilities and helpers
 ├── tests/                     # Unit, integration, and load tests
 ├── GEMINI.md                  # AI-assisted development guide
@@ -57,8 +57,7 @@ You can also use features from the [ADK](https://adk.dev/) CLI with `uv run adk`
 | `agents-cli lint`    | Run code quality checks                                                               |
 | `agents-cli eval`    | Evaluate agent behavior (generate, grade, analyze, and more — see `agents-cli eval --help`) |
 | `uv run pytest tests/unit tests/integration` | Run unit and integration tests                                                        |
-| `agents-cli deploy`  | Deploy agent to Agent Runtime                                                                |
-| `agents-cli publish gemini-enterprise` | Register deployed agent to Gemini Enterprise                    |
+| `agents-cli deploy`  | Deploy agent to Cloud Run                                                                   |
 
 ## 🛠️ Project Management
 

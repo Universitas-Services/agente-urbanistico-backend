@@ -1,43 +1,52 @@
-# Documento de Traspaso: Despliegue del Agente Urbanístico
+# Documentación de Despliegue: Agente Urbanístico
 
-Este documento resume el progreso y los errores encontrados al intentar desplegar el agente en Google Cloud, para que el próximo asistente de IA tenga todo el contexto necesario y pueda retomar el trabajo inmediatamente.
+Este documento resume el estado actual de la infraestructura, los enlaces importantes y el proceso para mantener y consumir el agente urbanístico.
 
-## 1. Contexto y Configuración Actual
-- **Cuenta de GCP:** `legal.universitas@gmail.com`
-- **Proyecto de GCP:** `clean-sunspot-496815-c5`
-- **Herramienta de Despliegue:** `agents-cli deploy` (Google ADK)
-- **Objetivo Inicial:** Vertex AI Agent Runtime (`agent_runtime`).
+---
 
-## 2. Modificaciones Realizadas en el Código
-- **Nuevas Skills:** Se integraron exitosamente `networkx` (Grafos) y la integración de Google Docs. Sus dependencias fueron añadidas a `pyproject.toml` mediante `uv add`.
-- **`app/agent.py`:** Se envolvió `google.auth.default()` en un bloque `try-except` para evitar errores `DefaultCredentialsError` durante la etapa de construcción en la nube (Cloud Build), ya que Agent Runtime importa el archivo durante el empaquetado.
+## 1. Ecosistema de Despliegue
+El agente está construido sobre **Google ADK (Agent Development Kit)** y está integrado en los siguientes ecosistemas de Google Cloud:
+*   **Google Cloud Run**: Actúa como el servidor principal. Aquí se encuentra alojado el código, los contenedores de Docker y el servidor FastAPI que ejecuta la lógica del agente.
+*   **Gemini Enterprise (Agent Runtime)**: Actúa como el orquestador principal. El agente de Cloud Run está "publicado" y registrado aquí utilizando el protocolo **A2A (Agent-to-Agent)**, lo que permite que la infraestructura de Google dialogue directamente con nuestro Cloud Run.
 
-## 3. Errores de Despliegue Encontrados
-El despliegue hacia `agent_runtime` falló consistentemente en la etapa de construcción (Cloud Build). Los logs arrojaron lo siguiente:
+## 2. Proyecto de Google Cloud
+*   **Project ID**: `clean-sunspot-496815-c5`
+*   **Project Number**: `529295899189`
+*   **Región del Servidor**: `us-east1`
 
-1. **Error de compilación en Docker:**
-   `ERROR: build step 3 "gcr.io/cloud-builders/docker" failed: step exited with non-zero status: 1`
-   - *Análisis:* Este error genérico ocurre cuando `pip install -r requirements.txt` falla dentro del contenedor gestionado por Vertex AI.
-   - *Sospecha Principal:* Agent Runtime empaqueta el directorio actual. Es altamente probable que esté subiendo la carpeta `.venv` de Windows al contenedor Linux. Al ejecutar `pip`, detecta paquetes cacheados para Windows y falla al intentar usarlos en Linux.
-   - *Sospecha Secundaria:* Agent Runtime parecía estar utilizando Python 3.14 internamente (`./.venv/lib/python3.14/site-packages`), lo que causó fallos al compilar librerías complejas como `grpcio` o `scipy`.
+## 3. Data Store (Base de Datos / Búsqueda)
+*   **Estado actual**: **Ninguno**. 
+*   **Contexto**: Acordamos que por el momento *no* se conectarían ni el `ID_PROYECTO_DATA_STORE` ni el `ID_DATA_STORE_URBANISTICO`. Esto está pendiente de implementación futura, por lo que el agente por ahora no consulta ningún origen de datos de Vertex AI Search de manera activa.
 
-2. **Error de Resolución de `uv export`:**
-   En un intento por forzar compatibilidad con versiones antiguas de Python (3.10), cambiamos `requires-python = ">=3.10"` en `pyproject.toml`. Esto falló inmediatamente porque la nueva librería `networkx` requiere estrictamente `Python >= 3.11`. Se revirtió el cambio a `>=3.11`.
+## 4. Proceso Técnico de Actualización (Despliegue de Código)
+Para actualizar la lógica del agente (por ejemplo, si modificas el código en `app/agent.py` o añades un Data Store), debes seguir estos pasos desde tu terminal (estando en la raíz del proyecto):
 
-## 4. Próximos Pasos Recomendados (Plan de Acción para Mañana)
-
-**Opción Recomendada: Migrar a Cloud Run**
-Dado que Agent Runtime es un entorno "caja negra" que está chocando con nuestro entorno local y librerías modernas, lo ideal es cambiar el objetivo a Cloud Run. Cloud Run utiliza contenedores Docker tradicionales, respeta el archivo `.dockerignore` (evitando que `.venv` se suba por error) y permite fijar la versión exacta de Python en el `Dockerfile`.
-
-**Pasos a seguir por el próximo agente:**
-1. Lee este documento para tener contexto.
-2. Ejecuta el comando para añadir la infraestructura de Cloud Run al proyecto:
+1. **Asegúrate de que tus cambios pasen las pruebas locales.**
+2. **Ejecuta el siguiente comando para desplegar la nueva versión**:
    ```bash
-   agents-cli scaffold enhance . --deployment-target cloud_run
+   agents-cli deploy --no-wait --no-confirm-project
    ```
-3. Verifica que el archivo `.dockerignore` excluya explícitamente `.venv`.
-4. Ejecuta el despliegue hacia Cloud Run:
-   ```bash
-   agents-cli deploy
-   ```
-5. Una vez desplegado con éxito, actualiza las variables `ID_PROYECTO_DATA_STORE` e `ID_DATA_STORE_URBANISTICO` en el código.
+3. **¿Tengo que volver a publicarlo en Gemini Enterprise?**
+   **No.** Como el agente está registrado por A2A (vía un Agent Card que expone Cloud Run), Gemini Enterprise consultará automáticamente las capacidades más recientes de la URL base cada vez que reciba un evento. Solo basta con que la nueva revisión de Cloud Run termine de compilarse y ponerse en verde.
+
+## 5. Enlaces Públicos y Pruebas
+*   **URL de Producción (Cloud Run)**: 
+    [https://agente-urbanistico-qtekgv4raq-ue.a.run.app](https://agente-urbanistico-qtekgv4raq-ue.a.run.app)
+*   **Dashboard de Gemini Enterprise**: 
+    [Ver Agente en la Consola de Google Cloud](https://console.cloud.google.com/gemini-enterprise/locations/global/engines/gemini-enterprise-17817902_1781790229220/overview/dashboard?project=clean-sunspot-496815-c5)
+
+*Nota: La URL de Cloud Run por defecto responderá `404` si abres la raíz en el navegador, ya que los endpoints operativos están bajo prefijos de API (como `/run` o `/a2a/...`).*
+
+## 6. Endpoints para un Frontend
+Si vas a construir un Frontend (como una página web en React o Next.js) para consumir este agente, tienes dos arquitecturas posibles:
+
+### Opción A: Consumo Indirecto (Vía Google Cloud / Dialogflow / Gemini) - **Recomendado**
+En lugar de que tu Frontend le hable directamente a tu código, el Frontend se conecta a la API de **Vertex AI Agent Builder** (Gemini Enterprise). Google Cloud se encargará del historial de chat, la gestión de sesiones y luego se comunicará en privado con tu Cloud Run. 
+*   **API a consumir**: [Vertex AI Conversations API (Sessions:detectIntent o Sessions:serverStreamingDetectIntent)](https://cloud.google.com/dialogflow/cx/docs/reference/rest/v3/projects.locations.agents.sessions/detectIntent)
+
+### Opción B: Consumo Directo (Directo a Cloud Run)
+Si prefieres construir tu propia gestión de historial y dialogar directamente con tu código alojado en Cloud Run saltándote Gemini Enterprise, usarías los endpoints generados por el ADK:
+*   **POST** `https://agente-urbanistico-qtekgv4raq-ue.a.run.app/agente-urbanistico/run`
+    *   **Propósito**: Enviar un *prompt* y obtener una respuesta.
+    *   **Carga útil (JSON)**: `{"prompt": "Hola, tengo una duda urbana"}`.
+    *   **Nota de Autenticación**: Debido a que en el paso de despliegue establecimos `--no-allow-unauthenticated` en Cloud Run, tu Frontend (o tu backend intermediario) **deberá inyectar un Token Bearer de Google Identity (OAuth2)** en los headers para que Cloud Run no bloquee la petición con un error `403 Forbidden`.
