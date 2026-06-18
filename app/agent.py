@@ -69,7 +69,7 @@ Reglas de interacción:
 root_agent = Agent(
     name="agente_urbanistico",
     model=Gemini(
-        model="gemini-3.5-flash",
+        model="gemini-2.5-flash",
         retry_options=types.HttpRetryOptions(attempts=3),
     ),
     instruction=INSTRUCCION_SISTEMA,
