@@ -22,7 +22,7 @@ COPY ./pyproject.toml ./README.md ./uv.lock* ./
 
 COPY ./app ./app
 
-RUN uv sync --frozen
+RUN uv sync
 
 RUN sed -i 's/data = json.load(f)/import json; data = json.load(f)/' .venv/lib/python3.12/site-packages/google/adk/cli/fast_api.py
 ARG COMMIT_SHA=""
