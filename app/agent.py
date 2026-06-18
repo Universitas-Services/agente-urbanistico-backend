@@ -14,11 +14,8 @@ try:
         os.environ["GOOGLE_CLOUD_PROJECT"] = project_id
 except Exception:
     pass # Ignoramos errores de auth durante el Cloud Build
-os.environ["GOOGLE_CLOUD_LOCATION"] = "us-east1"
-if "GEMINI_API_KEY" in os.environ:
-    os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "False"
-else:
-    os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "True"
+os.environ["GOOGLE_CLOUD_LOCATION"] = "global"
+os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "True"
 
 def consulta_normativa_urbanistica(query: str) -> str:
     """Busca información legal, ordenanzas y normativas urbanísticas en la biblioteca matriz."""
@@ -69,7 +66,7 @@ Reglas de interacción:
 root_agent = Agent(
     name="agente_urbanistico",
     model=Gemini(
-        model="gemini-3.5-flash",
+        model="gemini-1.5-pro",
         retry_options=types.HttpRetryOptions(attempts=3),
     ),
     instruction=INSTRUCCION_SISTEMA,
