@@ -3,6 +3,7 @@ import os
 from google.adk.agents import Agent
 from google.adk.apps import App
 from google.adk.models import Gemini
+from google.adk.agents.context import Context
 from google.genai import types
 
 # GOOGLE_CLOUD_PROJECT is automatically injected by Agent Runtime.
