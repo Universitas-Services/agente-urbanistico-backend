@@ -13,42 +13,70 @@ if "GEMINI_API_KEY" in os.environ:
 else:
     os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "True"
 
+from google.cloud import discoveryengine
+
 def consulta_normativa_urbanistica(query: str) -> str:
-    """Busca información legal, ordenanzas y normativas urbanísticas en la base documental.
+    """Busca información legal, ordenanzas y normativas urbanísticas en la base documental (Datastore).
     
     Usa esta herramienta cuando necesites encontrar artículos específicos de leyes, 
     ordenanzas municipales o regulaciones sobre zonificación y variables urbanas.
     """
-    
-    query_lower = query.lower()
-    
-    # --- MOCK DATA ---
-    # Textos legales simulados para pruebas de razonamiento hasta que el Data Store esté listo.
-    mock_db = {
-        "constitucion": "Constitución Nacional, Art. 156: Es de la competencia del Poder Público Nacional la ordenación y administración de la geografía, de las fronteras, y del territorio nacional. Art. 178: Es competencia del Municipio la ordenación territorial y urbanística, patrimonio histórico, vivienda de interés social, turismo local, parques y jardines, plazas, balnearios y otros sitios de recreación.",
-        "ley_organica_ordenacion": "Ley Orgánica de Ordenación Urbanística, Art. 10: La planificación urbanística comprende el Plan Nacional de Ordenación Urbanística, Planes de Desarrollo Urbano Local y Planes Especiales. Art. 15: Las Variables Urbanas Fundamentales deben establecerse de conformidad con el Plan de Desarrollo Urbano Local respectivo.",
-        "ordenanza_sucre": "Ordenanza de Zonificación Municipio Sucre, Art. 25: En la Zona R3 (Residencial Multifamiliar de densidad media), el porcentaje máximo de ubicación es 40% y el porcentaje máximo de construcción es 120%. Retiro de frente mínimo: 4 metros.",
-        "ordenanza_chacao": "Ordenanza de Arquitectura Municipio Chacao, Art. 12: Todo nuevo desarrollo comercial debe contemplar al menos 1 puesto de estacionamiento por cada 50 metros cuadrados de área neta vendible. Art. 14: La altura máxima permitida en el eje central no podrá exceder de 15 pisos residenciales.",
-        "variable_urbana": "Ley Orgánica de Ordenación Urbanística, Art. 87: Son Variables Urbanas Fundamentales para las edificaciones: el uso correspondiente, el espacio máximo de construcción, el área de ubicación, los retiros, la altura y la densidad bruta de población."
-    }
-    
-    resultados = []
-    
-    if "constitucion" in query_lower or "competencia" in query_lower:
-        resultados.append(mock_db["constitucion"])
-    if "ley organica" in query_lower or "lou" in query_lower or "nacional" in query_lower:
-        resultados.append(mock_db["ley_organica_ordenacion"])
-    if "sucre" in query_lower:
-        resultados.append(mock_db["ordenanza_sucre"])
-    if "chacao" in query_lower:
-        resultados.append(mock_db["ordenanza_chacao"])
-    if "variable" in query_lower or "vuf" in query_lower:
-        resultados.append(mock_db["variable_urbana"])
+    try:
+        project_id = "clean-sunspot-496815-c5"
+        location = "global"
+        data_store_id = "ds-derecho-urbanistico_1782317718928_gcs_store"
         
-    if not resultados:
-        return "Tras un análisis de la base documental, no se encontró información suficiente para responder la consulta de forma específica para este territorio o tema."
+        client = discoveryengine.SearchServiceClient()
+        serving_config = client.serving_config_path(
+            project=project_id,
+            location=location,
+            data_store=data_store_id,
+            serving_config="default_config",
+        )
         
-    return "\n\n".join(resultados)
+        request = discoveryengine.SearchRequest(
+            serving_config=serving_config,
+            query=query,
+            page_size=5,
+            content_search_spec=discoveryengine.SearchRequest.ContentSearchSpec(
+                snippet_spec=discoveryengine.SearchRequest.ContentSearchSpec.SnippetSpec(
+                    return_snippet=True
+                ),
+                extractive_content_spec=discoveryengine.SearchRequest.ContentSearchSpec.ExtractiveContentSpec(
+                    max_extractive_answer_count=3,
+                    max_extractive_segment_count=1
+                )
+            )
+        )
+        
+        response = client.search(request)
+        
+        resultados = []
+        for result in response.results:
+            document = result.document
+            
+            # Extract answers
+            if "extractive_answers" in document.derived_struct_data:
+                for answer in document.derived_struct_data["extractive_answers"]:
+                    content = answer.get("content", "")
+                    if content:
+                        resultados.append(f"- {content}")
+                        
+            # Extract segments if answers are not enough
+            elif "extractive_segments" in document.derived_struct_data:
+                for segment in document.derived_struct_data["extractive_segments"]:
+                    content = segment.get("content", "")
+                    if content:
+                        resultados.append(f"- {content}")
+                        
+        if not resultados:
+            return "Tras un análisis de la base documental, no se encontró información suficiente para responder la consulta de forma específica para este territorio o tema."
+            
+        return "Información recuperada de la base documental:\n\n" + "\n\n".join(resultados)
+        
+    except Exception as e:
+        print(f"Error querying Datastore: {e}")
+        return f"Error al consultar la base documental: {e}"
 
 INSTRUCCION_SISTEMA = """SISTEMA: CONSULTOR IA - DERECHO URBANÍSTICO
 MODO: RAG CONTROLADO + RAZONAMIENTO JURÍDICO ASISTIDO
