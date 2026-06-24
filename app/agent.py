@@ -38,15 +38,6 @@ def consulta_normativa_urbanistica(query: str) -> str:
             serving_config=serving_config,
             query=query,
             page_size=5,
-            content_search_spec=discoveryengine.SearchRequest.ContentSearchSpec(
-                snippet_spec=discoveryengine.SearchRequest.ContentSearchSpec.SnippetSpec(
-                    return_snippet=True
-                ),
-                extractive_content_spec=discoveryengine.SearchRequest.ContentSearchSpec.ExtractiveContentSpec(
-                    max_extractive_answer_count=3,
-                    max_extractive_segment_count=1
-                )
-            )
         )
         
         response = client.search(request)
@@ -54,20 +45,34 @@ def consulta_normativa_urbanistica(query: str) -> str:
         resultados = []
         for result in response.results:
             document = result.document
+            doc_data = document.derived_struct_data or {}
             
-            # Extract answers
-            if "extractive_answers" in document.derived_struct_data:
-                for answer in document.derived_struct_data["extractive_answers"]:
-                    content = answer.get("content", "")
-                    if content:
-                        resultados.append(f"- {content}")
-                        
-            # Extract segments if answers are not enough
-            elif "extractive_segments" in document.derived_struct_data:
-                for segment in document.derived_struct_data["extractive_segments"]:
-                    content = segment.get("content", "")
-                    if content:
-                        resultados.append(f"- {content}")
+            # Extraer título del documento
+            titulo = doc_data.get("title", document.id or "Documento sin título")
+            
+            # Intentar obtener snippets (si están disponibles)
+            snippets_encontrados = False
+            if "snippets" in doc_data:
+                for snippet in doc_data["snippets"]:
+                    texto = snippet.get("snippet", "")
+                    if texto:
+                        resultados.append(f"**{titulo}**: {texto}")
+                        snippets_encontrados = True
+            
+            # Si no hay snippets, buscar contenido en struct_data
+            if not snippets_encontrados and document.struct_data:
+                contenido_partes = []
+                for clave, valor in document.struct_data.items():
+                    if isinstance(valor, str) and len(valor) > 20:
+                        contenido_partes.append(str(valor))
+                if contenido_partes:
+                    texto_combinado = " ".join(contenido_partes)[:500]
+                    resultados.append(f"**{titulo}**: {texto_combinado}")
+            
+            # Fallback: incluir al menos el título/link del documento
+            if not snippets_encontrados and not document.struct_data:
+                link = doc_data.get("link", "")
+                resultados.append(f"**{titulo}** (Fuente: {link})" if link else f"**{titulo}**")
                         
         if not resultados:
             return "Tras un análisis de la base documental, no se encontró información suficiente para responder la consulta de forma específica para este territorio o tema."

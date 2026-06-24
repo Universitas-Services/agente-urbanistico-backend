@@ -1,7 +1,7 @@
 # agente-urbanistico
 
 Simple ReAct agent
-Agent generated with `agents-cli` version `0.4.0`
+Agent generated with `agents-cli` version `0.5.0`
 
 ## Project Structure
 
