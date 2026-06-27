@@ -2,12 +2,5 @@
   "remote_agent_runtime_id": "projects/529295899189/locations/us-east1/reasoningEngines/2958970508298682368",
   "deployment_target": "agent_runtime",
   "is_a2a": false,
-  "deployment_timestamp": "2026-06-24T18:27:34.921362+00:00",
-  "pending_operation": {
-    "operation_name": "projects/529295899189/locations/us-east1/reasoningEngines/2958970508298682368/operations/1693082224116629504",
-    "project": "clean-sunspot-496815-c5",
-    "location": "us-east1",
-    "deployment_target": "agent_runtime",
-    "started_at": "2026-06-27T03:18:35.627718+00:00"
-  }
+  "deployment_timestamp": "2026-06-27T03:57:42.642468+00:00"
 }
