@@ -29,7 +29,9 @@ def consulta_normativa_urbanistica(query: str) -> str:
         
         engine_id = "app-derecho-urbanistico_1782532066728"
         
-        client = discoveryengine.SearchServiceClient()
+        from google.api_core import client_options
+        client_opts = client_options.ClientOptions(quota_project_id=project_id)
+        client = discoveryengine.SearchServiceClient(client_options=client_opts)
         # Construir ruta manualmente para usar un Engine en vez de DataStore
         serving_config = f"projects/{project_id}/locations/{location}/collections/default_collection/engines/{engine_id}/servingConfigs/default_config"
         
