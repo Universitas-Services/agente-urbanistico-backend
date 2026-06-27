@@ -25,20 +25,31 @@ def consulta_normativa_urbanistica(query: str) -> str:
     try:
         project_id = "agente-manual-contrataciones"
         location = "global"
-        data_store_id = "derecho-urbanistico-pdfs_1782529893492_gcs_store"
+        engine_id = "app-derecho-urbanistico_1782532066728"
+        
+        engine_id = "app-derecho-urbanistico_1782532066728"
         
         client = discoveryengine.SearchServiceClient()
-        serving_config = client.serving_config_path(
-            project=project_id,
-            location=location,
-            data_store=data_store_id,
-            serving_config="default_config",
+        # Construir ruta manualmente para usar un Engine en vez de DataStore
+        serving_config = f"projects/{project_id}/locations/{location}/collections/default_collection/engines/{engine_id}/servingConfigs/default_config"
+        
+        # Necesitamos especificar ContentSearchSpec para Enterprise Edition
+        # para que nos devuelva los fragmentos extraídos de los PDFs.
+        content_spec = discoveryengine.SearchRequest.ContentSearchSpec(
+            snippet_spec=discoveryengine.SearchRequest.ContentSearchSpec.SnippetSpec(
+                return_snippet=True
+            ),
+            extractive_content_spec=discoveryengine.SearchRequest.ContentSearchSpec.ExtractiveContentSpec(
+                max_extractive_answer_count=1,
+                max_extractive_segment_count=3
+            )
         )
         
         request = discoveryengine.SearchRequest(
             serving_config=serving_config,
             query=query,
             page_size=5,
+            content_search_spec=content_spec,
         )
         
         response = client.search(request)
@@ -51,11 +62,19 @@ def consulta_normativa_urbanistica(query: str) -> str:
             # Extraer título del documento
             titulo = doc_data.get("title", document.id or "Documento sin título")
             
-            # Intentar obtener snippets (si están disponibles)
+            # Buscar segmentos extractivos (Enterprise Edition)
             snippets_encontrados = False
-            if "snippets" in doc_data:
-                for snippet in doc_data["snippets"]:
-                    texto = snippet.get("snippet", "")
+            if "extractive_segments" in doc_data:
+                for segment in doc_data["extractive_segments"]:
+                    texto = segment.get("content", "")
+                    if texto:
+                        resultados.append(f"**{titulo}**: {texto}")
+                        snippets_encontrados = True
+            
+            # Fallback a snippets tradicionales si no hay extractivos
+            if not snippets_encontrados and "extractive_answers" in doc_data:
+                for answer in doc_data["extractive_answers"]:
+                    texto = answer.get("content", "")
                     if texto:
                         resultados.append(f"**{titulo}**: {texto}")
                         snippets_encontrados = True
