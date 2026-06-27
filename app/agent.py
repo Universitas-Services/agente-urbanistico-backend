@@ -7,6 +7,7 @@ from google.adk.agents.context import Context
 from google.genai import types
 
 # GOOGLE_CLOUD_PROJECT is automatically injected by Agent Runtime.
+os.environ["GOOGLE_CLOUD_PROJECT"] = "clean-sunspot-496815-c5"
 os.environ["GOOGLE_CLOUD_LOCATION"] = "us-east1"
 if "GEMINI_API_KEY" in os.environ:
     os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "False"
@@ -22,9 +23,9 @@ def consulta_normativa_urbanistica(query: str) -> str:
     ordenanzas municipales o regulaciones sobre zonificación y variables urbanas.
     """
     try:
-        project_id = "clean-sunspot-496815-c5"
+        project_id = "agente-manual-contrataciones"
         location = "global"
-        data_store_id = "ds-derecho-urbanistico_1782317718928_gcs_store"
+        data_store_id = "derecho-urbanistico-pdfs_1782529893492_gcs_store"
         
         client = discoveryengine.SearchServiceClient()
         serving_config = client.serving_config_path(

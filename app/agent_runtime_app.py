@@ -57,6 +57,7 @@ class AgentEngineApp(AdkApp):
         return self
 
 
+os.environ["GOOGLE_CLOUD_PROJECT"] = "clean-sunspot-496815-c5"
 gemini_location = os.environ.get("GOOGLE_CLOUD_LOCATION")
 logs_bucket_name = os.environ.get("LOGS_BUCKET_NAME")
 agent_runtime = AgentEngineApp(
