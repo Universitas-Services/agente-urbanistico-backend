@@ -1,89 +1,63 @@
-# agente-urbanistico
+# Agente Urbanístico
 
-Simple ReAct agent
-Agent generated with `agents-cli` version `0.5.0`
+## Título y Descripción
+El **Agente Urbanístico** es un asistente virtual diseñado para buscar y procesar información legal, ordenanzas y normativas urbanísticas. Resuelve el problema de la fragmentación y complejidad en la búsqueda de leyes y normas, consultando una biblioteca matriz (Data Store) alojada en Google Cloud Platform (GCP).
 
-## Project Structure
+Está construido sobre la arquitectura de Google Agent Development Kit (ADK), utilizando Vertex AI Search para la recuperación de información (RAG) y los modelos de la familia Gemini 2.5.
 
-```
-agente-urbanistico/
-├── app/         # Core agent code
-│   ├── agent.py               # Main agent logic
-│   ├── agent_runtime_app.py    # Agent Runtime application logic
-│   └── app_utils/             # App utilities and helpers
-├── tests/                     # Unit, integration, and load tests
-├── GEMINI.md                  # AI-assisted development guide
-└── pyproject.toml             # Project dependencies
-```
+## Ecosistema y Despliegue (Gateway Multicanal)
+Este repositorio contiene **únicamente la lógica del agente y su conexión con la base de datos** (El Cerebro). El agente se despliega de forma segura y privada en *Vertex AI Reasoning Engine*.
 
-> 💡 **Tip:** Use [Gemini CLI](https://github.com/google-gemini/gemini-cli) for AI-assisted development - project context is pre-configured in `GEMINI.md`.
+Para interactuar con el agente a través de interfaces públicas (como Telegram, Web o WhatsApp), debes utilizar el proyecto asociado llamado **[Gateway Multicanal] gateway-ai-urbanistico**. Dicho Gateway actúa como intermediario (BFF), recibiendo los mensajes de los usuarios, gestionando las sesiones y enviándolos de manera autenticada a este Agente Backend.
 
-## Requirements
+## Prerrequisitos
+Para ejecutar y contribuir en este proyecto, necesitas:
+- **Python 3.11** (requerido estrictamente por dependencias en la nube).
+- **[uv](https://docs.astral.sh/uv/)**: Gestor de paquetes de Python ultrarrápido.
+- **[Google Cloud CLI](https://cloud.google.com/sdk/docs/install)**: Herramienta de línea de comandos para autenticación con GCP.
+- **agents-cli**: CLI oficial para la gestión de agentes (`uv tool install google-agents-cli`).
 
-Before you begin, ensure you have:
-- **uv**: Python package manager (used for all dependency management in this project) - [Install](https://docs.astral.sh/uv/getting-started/installation/) ([add packages](https://docs.astral.sh/uv/concepts/dependencies/) with `uv add <package>`)
-- **agents-cli**: Agents CLI - Install with `uv tool install google-agents-cli`
-- **Google Cloud SDK**: For GCP services - [Install](https://cloud.google.com/sdk/docs/install)
+## Instalación y Configuración
 
+Sigue estos pasos para levantar el entorno en tu máquina local:
 
-## Quick Start
+1. **Clonar el repositorio y entrar al directorio:**
+   ```bash
+   git clone <url-del-repo>
+   cd agente-urbanistico-backend/agente-urbanistico-backend
+   ```
 
-Install `agents-cli` and its skills if not already installed:
+2. **Instalar el CLI de agentes y sus dependencias:**
+   ```bash
+   uvx google-agents-cli setup
+   agents-cli install
+   ```
 
-```bash
-uvx google-agents-cli setup
-```
+3. **Autenticación con Google Cloud (Application Default Credentials):**
+   El sistema no usa API Keys. Debes iniciar sesión con tu cuenta de GCP que tenga los permisos necesarios sobre el proyecto.
+   ```bash
+   gcloud auth application-default login
+   gcloud config set project <tu-id-de-proyecto>
+   ```
 
-Install required packages:
+## Scripts Principales
 
-```bash
-agents-cli install
-```
+A continuación se listan los comandos más utilizados para operar el proyecto:
 
-Test the agent with a local web server:
-
-```bash
-agents-cli playground
-```
-
-You can also use features from the [ADK](https://adk.dev/) CLI with `uv run adk`.
-
-## Commands
-
-| Command              | Description                                                                                 |
-| -------------------- | ------------------------------------------------------------------------------------------- |
-| `agents-cli install` | Install dependencies using uv                                                         |
-| `agents-cli playground` | Launch local development environment                                                  |
-| `agents-cli lint`    | Run code quality checks                                                               |
-| `agents-cli eval`    | Evaluate agent behavior (generate, grade, analyze, and more — see `agents-cli eval --help`) |
-| `uv run pytest tests/unit tests/integration` | Run unit and integration tests                                                        |
-| `agents-cli deploy`  | Deploy agent to Agent Runtime                                                                |
-| `agents-cli publish gemini-enterprise` | Register deployed agent to Gemini Enterprise                    |
-
-## 🛠️ Project Management
-
-| Command | What It Does |
-|---------|--------------|
-| `agents-cli scaffold enhance` | Add CI/CD pipelines and Terraform infrastructure |
-| `agents-cli infra cicd` | One-command setup of entire CI/CD pipeline + infrastructure |
-| `agents-cli scaffold upgrade` | Auto-upgrade to latest version while preserving customizations |
-
----
-
-## Development
-
-Edit your agent logic in `app/agent.py` and test with `agents-cli playground` - it auto-reloads on save.
-
-## Deployment
-
-```bash
-gcloud config set project <your-project-id>
-agents-cli deploy
-```
-
-To add CI/CD and Terraform, run `agents-cli scaffold enhance`.
-To set up your production infrastructure, run `agents-cli infra cicd`.
-
-## Observability
-
-Built-in telemetry exports to Cloud Trace, BigQuery, and Cloud Logging.
+- **Levantar el servidor local (Desarrollo):**
+  ```bash
+  agents-cli playground
+  ```
+- **Ejecutar pruebas (Unitarias e Integración):**
+  ```bash
+  uv run pytest tests/unit tests/integration
+  ```
+- **Revisión de calidad de código (Linting):**
+  ```bash
+  agents-cli lint
+  ```
+- **Despliegue a Producción (GCP Reasoning Engine):**
+  *Nota: Antes de desplegar, asegúrate de renombrar o excluir la carpeta `.venv` si estás en Windows.*
+  ```bash
+  agents-cli deploy
+  ```
