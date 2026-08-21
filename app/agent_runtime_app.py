@@ -54,6 +54,8 @@ class AgentEngineApp(AdkApp):
 
     def clone(self) -> "AgentEngineApp":
         """Returns a clone of the Agent Runtime application."""
+        # Agent Engine templates historically return the same instance.
+        # super().clone() can break request routing after redeploy.
         return self
 
 

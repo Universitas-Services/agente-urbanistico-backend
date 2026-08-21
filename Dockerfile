@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM python:3.12-slim
+FROM python:3.11-slim
 
 RUN pip install --no-cache-dir uv==0.8.13
 
@@ -24,7 +24,13 @@ COPY ./app ./app
 
 RUN uv sync
 
-RUN sed -i 's/data = json.load(f)/import json; data = json.load(f)/' .venv/lib/python3.12/site-packages/google/adk/cli/fast_api.py
+# Patch ADK if present; path varies by Python minor version.
+RUN FILE="$(find .venv -path '*/google/adk/cli/fast_api.py' | head -n 1)" \
+    && if [ -n "$FILE" ]; then \
+         sed -i 's/data = json.load(f)/import json; data = json.load(f)/' "$FILE"; \
+       else \
+         echo "ADK fast_api.py not found; skipping patch"; \
+       fi
 ARG COMMIT_SHA=""
 ENV COMMIT_SHA=${COMMIT_SHA}
 

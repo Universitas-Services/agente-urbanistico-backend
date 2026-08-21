@@ -1,10 +1,11 @@
 # ruff: noqa
+import asyncio
 import os
 from google.adk.agents import Agent
 from google.adk.apps import App
-from google.adk.models import Gemini
-from google.adk.agents.context import Context
 from google.genai import types
+
+from app.uncached_gemini import UncachedGemini
 
 # GOOGLE_CLOUD_PROJECT is automatically injected by Agent Runtime.
 os.environ["GOOGLE_CLOUD_PROJECT"] = "clean-sunspot-496815-c5"
@@ -16,12 +17,7 @@ else:
 
 from google.cloud import discoveryengine
 
-def consulta_normativa_urbanistica(query: str) -> str:
-    """Busca información legal, ordenanzas y normativas urbanísticas en la base documental (Datastore).
-    
-    Usa esta herramienta cuando necesites encontrar artículos específicos de leyes, 
-    ordenanzas municipales o regulaciones sobre zonificación y variables urbanas.
-    """
+def _consulta_normativa_urbanistica_sync(query: str) -> str:
     try:
         project_id = "agente-manual-contrataciones"
         location = "global"
@@ -104,6 +100,16 @@ def consulta_normativa_urbanistica(query: str) -> str:
     except Exception as e:
         print(f"Error querying Datastore: {e}")
         return f"Error al consultar la base documental: {e}"
+
+
+async def consulta_normativa_urbanistica(query: str) -> str:
+    """Busca información legal, ordenanzas y normativas urbanísticas en la base documental (Datastore).
+
+    Usa esta herramienta cuando necesites encontrar artículos específicos de leyes,
+    ordenanzas municipales o regulaciones sobre zonificación y variables urbanas.
+    """
+    return await asyncio.to_thread(_consulta_normativa_urbanistica_sync, query)
+
 
 INSTRUCCION_SISTEMA = """CONSULTOR IA — CONFIGURACIÓN DEL AGENTE CONVERSACIONAL
 ESTADO OPERATIVO: CONSULTOR NORMATIVO ESPECIALIZADO (RAG CERRADO)
@@ -327,7 +333,7 @@ Consultor IA no es un buscador ni un tramitador. Es un consultor normativo espec
 
 root_agent = Agent(
     name="agente_urbanistico",
-    model=Gemini(
+    model=UncachedGemini(
         model="gemini-2.5-flash",
         retry_options=types.HttpRetryOptions(attempts=3),
     ),

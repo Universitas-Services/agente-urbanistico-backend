@@ -46,6 +46,8 @@ app: FastAPI = get_fast_api_app(
     allow_origins=allow_origins,
     session_service_uri=session_service_uri,
     otel_to_cloud=True,
+    # Required so Agent Engine / Playground can call /api/stream_reasoning_engine
+    gemini_enterprise_app_name="app",
 )
 app.title = "agente-urbanistico"
 app.description = "API for interacting with the Agent agente-urbanistico"
