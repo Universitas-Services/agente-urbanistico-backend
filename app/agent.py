@@ -21,10 +21,10 @@ def _consulta_normativa_urbanistica_sync(query: str) -> str:
     try:
         project_id = "agente-manual-contrataciones"
         location = "global"
-        engine_id = "app-derecho-urbanistico_1782532066728"
-        
-        engine_id = "app-derecho-urbanistico_1782532066728"
-        
+        # Engine sobre ds-urbanismo-kb (bucket derecho-urbanistico-prueba, parser OCR).
+        # Se mantiene sincronizado por el Cloud Run Job sync-kb-urbanismo (ver sync/).
+        engine_id = "engine-urbanismo-kb"
+
         from google.api_core import client_options
         client_opts = client_options.ClientOptions(quota_project_id=project_id)
         client = discoveryengine.SearchServiceClient(client_options=client_opts)
