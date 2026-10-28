@@ -18,6 +18,7 @@ from fastapi import FastAPI
 from google.adk.cli.fast_api import get_fast_api_app
 from google.cloud import logging as google_cloud_logging
 
+from app import sesiones
 from app.app_utils.telemetry import setup_telemetry
 from app.app_utils.typing import Feedback
 
@@ -33,8 +34,8 @@ allow_origins = (
 logs_bucket_name = os.environ.get("LOGS_BUCKET_NAME")
 
 AGENT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# In-memory session configuration - no persistent storage
-session_service_uri = None
+# Sesiones gestionadas de Vertex en el engine; en memoria en local (ver app/sesiones.py)
+session_service_uri = sesiones.session_service_uri()
 
 artifact_service_uri = f"gs://{logs_bucket_name}" if logs_bucket_name else None
 
