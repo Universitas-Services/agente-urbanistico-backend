@@ -6,6 +6,7 @@ from google.adk.agents import Agent
 from google.adk.apps import App
 from google.genai import types
 
+from app.referencias import filtrar_referencia_sin_historial
 from app.uncached_gemini import UncachedGemini
 
 # GOOGLE_CLOUD_PROJECT is automatically injected by Agent Runtime.
@@ -400,6 +401,7 @@ root_agent = Agent(
     ),
     instruction=INSTRUCCION_SISTEMA,
     tools=[consulta_normativa_urbanistica],
+    before_model_callback=filtrar_referencia_sin_historial,
 )
 
 app = App(
