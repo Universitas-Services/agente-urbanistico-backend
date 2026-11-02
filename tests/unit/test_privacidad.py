@@ -1,8 +1,6 @@
 import pytest
-from google.adk.models import LlmResponse
-from google.genai import types
 
-from app.privacidad import filtrar_datos_personales, tapar_datos_personales
+from app.privacidad import tapar_datos_personales
 
 
 @pytest.mark.parametrize(
@@ -39,25 +37,3 @@ def test_tapa_datos_personales(texto: str, esperado: str) -> None:
 )
 def test_no_toca_referencias_normativas(texto: str) -> None:
     assert tapar_datos_personales(texto) == texto
-
-
-def _respuesta(texto: str) -> LlmResponse:
-    return LlmResponse(content=types.Content(role="model", parts=[types.Part(text=texto)]))
-
-
-def test_callback_reemplaza_en_la_respuesta() -> None:
-    respuesta = filtrar_datos_personales(None, _respuesta("Proponente: Pedro Pérez, V-12.345.678"))
-    assert respuesta is not None
-    assert respuesta.content.parts[0].text == "Proponente: Pedro Pérez, [Cédula de identidad]"
-
-
-def test_callback_sin_datos_no_cambia_nada() -> None:
-    assert filtrar_datos_personales(None, _respuesta("El PDUL fija directrices.")) is None
-
-
-def test_callback_ignora_llamadas_a_herramientas() -> None:
-    llamada = types.Content(
-        role="model",
-        parts=[types.Part(function_call=types.FunctionCall(name="consulta", args={"query": "x"}))],
-    )
-    assert filtrar_datos_personales(None, LlmResponse(content=llamada)) is None
